@@ -16,11 +16,23 @@ module.exports = {
     async index (request,response){
         const {page = 1} = request.query;
         const [count] = await connection('incidents').count();
+        
         const incidents = await connection('incidents')
         .join('ongs','ongs.id','=','incidents.ong_id')
         .limit(5).offset((page -1)*5)
-        .select('');
+        .select(['incidents.id',
+            'incidents.title',
+            'incidents.description',
+            'incidents.value',
+            'incidents.ong_id',
+            'ongs.email',
+            'ongs.whatsapp',
+            'ongs.city',
+            'ongs.uf'
+        ]);
+        
         response.header('X-Total-Count',count['count(*)']);
+        
         return response.json(incidents);
     },
     async delete (request,response){
@@ -32,7 +44,7 @@ module.exports = {
             .where('id',id)
             .first();
 
-        if(caso.ong_id != ong_id){
+        if(caso.ong_id !== ong_id){
             return response.status(401).json({error: 'Operation not permitted'})
         }
         await connection('incidents').where('id',id)
